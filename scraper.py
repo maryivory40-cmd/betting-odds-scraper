@@ -17,19 +17,31 @@ class OddsPortalScraper:
         except requests.RequestException as exc:
             raise RuntimeError(f"Failed to fetch page: {exc}") from exc
 
-        soup = BeautifulSoup(response.text, "html.parser")
-        rows = soup.find_all("tr", class_="odd deactivate")
+        self.matches = self._parse_matches(response.text)
 
-        self.matches = []
+        if self.matches:
+            print(f"✅ Fetched {len(self.matches)} matches")
+        else:
+            print(
+                "⚠️ No parseable matches found. The page may have no listed "
+                "fixtures or its layout may have changed."
+            )
+
+        return self.matches
+
+    @staticmethod
+    def _parse_matches(html):
+        soup = BeautifulSoup(html, "html.parser")
+        rows = soup.select("tr.odd, tr.even")
+        matches = []
         for row in rows:
             try:
-                teams_elem = row.find("td", class_="name")
+                teams_elem = row.select_one("td.name, td.table-participant")
                 if not teams_elem:
                     continue
 
                 teams = teams_elem.text.strip()
-                odds_cells = row.find_all("td", class_="odds-nowrp")
-                
+                odds_cells = row.select("td.odds-nowrp")
                 if len(odds_cells) < 3:
                     continue
 
@@ -37,7 +49,7 @@ class OddsPortalScraper:
                 draw = float(odds_cells[1].text.strip())
                 away = float(odds_cells[2].text.strip())
 
-                self.matches.append({
+                matches.append({
                     "teams": teams,
                     "home": home,
                     "draw": draw,
@@ -46,13 +58,15 @@ class OddsPortalScraper:
             except (TypeError, ValueError, AttributeError):
                 continue
 
-        print(f"✅ Fetched {len(self.matches)} matches")
-        return self.matches
+        return matches
 
     def scan_arbitrage(self):
         """Scan matches for arbitrage opportunities"""
         if not self.matches:
             self.fetch_matches()
+        if not self.matches:
+            print("No match odds available to scan.")
+            return []
 
         opportunities = []
         for match in self.matches:
