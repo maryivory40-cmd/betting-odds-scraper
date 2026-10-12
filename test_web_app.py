@@ -22,6 +22,7 @@ class OddsDashboardTests(unittest.TestCase):
         for match in (
             {"home": 2.0, "draw": 3.0},
             {"home": 0, "draw": 3.0, "away": 4.0},
+            {"home": 1.0, "draw": 3.0, "away": 4.0},
             {"home": float("inf"), "draw": 3.0, "away": 4.0},
         ):
             with self.subTest(match=match):

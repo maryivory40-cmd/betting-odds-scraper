@@ -11,15 +11,14 @@ WEB_DIR = Path(__file__).parent / "web"
 def market_probabilities(match):
     """Return normalized market-implied probabilities from decimal odds."""
     try:
-        implied = [
-            1 / float(match[key]) for key in ("home", "draw", "away")
-        ]
-    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        odds = [float(match[key]) for key in ("home", "draw", "away")]
+    except (KeyError, TypeError, ValueError):
         return None
 
-    if any(not math.isfinite(value) or value <= 0 for value in implied):
+    if any(not math.isfinite(value) or value <= 1 for value in odds):
         return None
 
+    implied = [1 / value for value in odds]
     total = sum(implied)
     return {
         key: value / total * 100
@@ -71,12 +70,13 @@ class OddsDashboardHandler(BaseHTTPRequestHandler):
         for match in matches:
             probabilities = market_probabilities(match)
             if probabilities is not None:
+                odds = {
+                    key: float(match[key]) for key in ("home", "draw", "away")
+                }
                 result.append(
                     {
                         "teams": str(match.get("teams", "Match")),
-                        "odds": {
-                            key: float(match[key]) for key in ("home", "draw", "away")
-                        },
+                        "odds": odds,
                         "probabilities": probabilities,
                     }
                 )
