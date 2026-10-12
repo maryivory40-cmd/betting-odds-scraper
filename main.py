@@ -11,6 +11,7 @@ def main():
         "fetch": scraper.fetch_matches,
         "scan": scraper.scan_arbitrage,
         "save": lambda: scraper.save_results(opportunities),
+        "book": lambda: scraper.export_manual_booking(opportunities),
         "repl": lambda: start_python_repl(scraper, opportunities),
         "help": show_help,
         "exit": lambda: exit_program(),
@@ -47,6 +48,7 @@ def show_help():
     print("  fetch - Fetch matches from OddsPortal")
     print("  scan  - Scan fetched matches for arbitrage")
     print("  save  - Save last scan results to CSV")
+    print("  book  - Export copyable manual-booking lines")
     print("  repl  - Open an interactive Python REPL")
     print("  help  - Show this help message")
     print("  exit  - Exit the program")

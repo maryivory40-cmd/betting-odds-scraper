@@ -95,3 +95,19 @@ class OddsPortalScraper:
             storage.save_matches(opportunities)
         else:
             print("No opportunities to save.")
+
+    def export_manual_booking(self, opportunities=None):
+        """Export copyable manual-booking lines to a text file."""
+        from storage import OddsStorage
+
+        if opportunities is None:
+            opportunities = self.scan_arbitrage()
+
+        if opportunities:
+            storage = OddsStorage()
+            _, content = storage.save_manual_booking_template(opportunities)
+            if content:
+                print("\n📋 Copy this into your manual booking notes:\n")
+                print(content + "\n")
+        else:
+            print("No opportunities to export.")
