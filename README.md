@@ -27,4 +27,5 @@ python main.py
 - `fetch` - Fetch matches from OddsPortal
 - `scan` - Scan for arbitrage opportunities
 - `save` - Save results to CSV
+- `repl` - Open an interactive Python REPL with `scraper` and `opportunities`
 - `exit` - Exit the program
