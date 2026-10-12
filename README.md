@@ -1,4 +1,4 @@
-# betting-odds-scraper
+# betting Bot
 
 A Python-based betting odds scraper and arbitrage scanner.
 
@@ -27,4 +27,6 @@ python main.py
 - `fetch` - Fetch matches from OddsPortal
 - `scan` - Scan for arbitrage opportunities
 - `save` - Save results to CSV
+- `book` - Export copyable manual-booking lines to `data/manual_booking_*.txt`
+- `repl` - Open an interactive Python REPL with `scraper` and `opportunities`
 - `exit` - Exit the program

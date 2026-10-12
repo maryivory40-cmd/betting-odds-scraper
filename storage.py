@@ -34,3 +34,34 @@ class OddsStorage:
             print(f"💾 Saved {len(matches)} matches to {path}")
         except IOError as exc:
             print(f"Error saving file: {exc}")
+
+    def save_manual_booking_template(self, opportunities, filename=None):
+        """Save copyable manual-booking lines to a text file."""
+        if filename is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"manual_booking_{timestamp}.txt"
+
+        path = self.output_dir / filename
+        lines = [
+            "MATCH | SEARCH TEXT | HOME | DRAW | AWAY | PROFIT% | BOOKED?",
+        ]
+
+        for match in opportunities:
+            teams = match.get("teams", "")
+            home = f"{match.get('home', 0):.2f}"
+            draw = f"{match.get('draw', 0):.2f}"
+            away = f"{match.get('away', 0):.2f}"
+            profit_percent = f"{match.get('profit_percent', 0):.2f}"
+            lines.append(
+                f"{teams} | {teams} | {home} | {draw} | {away} | {profit_percent} | NO"
+            )
+
+        content = "\n".join(lines)
+
+        try:
+            path.write_text(content + "\n", encoding="utf-8")
+            print(f"💾 Saved manual booking list to {path}")
+            return path, content
+        except IOError as exc:
+            print(f"Error saving file: {exc}")
+            return None, ""

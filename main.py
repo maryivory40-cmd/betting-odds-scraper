@@ -1,3 +1,5 @@
+import code
+
 from scraper import OddsPortalScraper
 
 
@@ -9,18 +11,20 @@ def main():
         "fetch": scraper.fetch_matches,
         "scan": scraper.scan_arbitrage,
         "save": lambda: scraper.save_results(opportunities),
+        "book": lambda: scraper.export_manual_booking(opportunities if opportunities else None),
+        "repl": lambda: start_python_repl(scraper, opportunities),
         "help": show_help,
         "exit": lambda: exit_program(),
     }
 
     print("\n" + "="*50)
-    print("🎯 Betting Odds Scraper & Arbitrage Scanner")
+    print("🎯 betting Bot")
     print("="*50)
     print("Type 'help' for available commands\n")
 
     while True:
         try:
-            cmd = input("betting-scraper> ").strip().lower()
+            cmd = input("betting-bot> ").strip().lower()
 
             if cmd == "scan":
                 opportunities = scraper.scan_arbitrage()
@@ -44,9 +48,17 @@ def show_help():
     print("  fetch - Fetch matches from OddsPortal")
     print("  scan  - Scan fetched matches for arbitrage")
     print("  save  - Save last scan results to CSV")
+    print("  book  - Export copyable manual-booking lines")
+    print("  repl  - Open an interactive Python REPL")
     print("  help  - Show this help message")
     print("  exit  - Exit the program")
     print("="*50 + "\n")
+
+
+def start_python_repl(scraper, opportunities):
+    print("\n🐍 Python REPL started. Press Ctrl-D to return to the CLI.\n")
+    banner = "Available objects: scraper, opportunities"
+    code.interact(banner=banner, local={"scraper": scraper, "opportunities": opportunities})
 
 
 def exit_program():
