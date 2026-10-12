@@ -80,10 +80,22 @@ class TelegramBot:
                 )
             elif command == "fetch":
                 matches = self.scraper.fetch_matches()
-                self._send_message(chat_id, f"Fetched {len(matches)} matches.")
+                if matches:
+                    self._send_message(chat_id, f"Fetched {len(matches)} matches.")
+                else:
+                    self._send_message(
+                        chat_id,
+                        "No match odds were parsed. OddsPortal may have no listed "
+                        "fixtures or its page layout may have changed.",
+                    )
             elif command == "scan":
                 self.opportunities = self.scraper.scan_arbitrage()
-                self._send_scan_results(chat_id)
+                if not self.scraper.matches:
+                    self._send_message(
+                        chat_id, "No match odds are available to scan right now."
+                    )
+                else:
+                    self._send_scan_results(chat_id)
             elif command == "save":
                 if not self.opportunities:
                     self._send_message(chat_id, "No scan results to save.")
