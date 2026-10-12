@@ -11,7 +11,7 @@ def main():
         "fetch": scraper.fetch_matches,
         "scan": scraper.scan_arbitrage,
         "save": lambda: scraper.save_results(opportunities),
-        "book": lambda: scraper.export_manual_booking(opportunities),
+        "book": lambda: scraper.export_manual_booking(opportunities if opportunities else None),
         "repl": lambda: start_python_repl(scraper, opportunities),
         "help": show_help,
         "exit": lambda: exit_program(),
