@@ -1,7 +1,22 @@
+import argparse
+
 from scraper import OddsPortalScraper
+from telegram_bot import TelegramBot
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--telegram",
+        action="store_true",
+        help="Run the Telegram bot instead of the command-line interface",
+    )
+    args = parser.parse_args()
+
+    if args.telegram:
+        TelegramBot.from_environment().run()
+        return
+
     scraper = OddsPortalScraper()
     opportunities = []
 
