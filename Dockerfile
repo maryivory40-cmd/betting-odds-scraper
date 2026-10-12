@@ -8,5 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY main.py scraper.py storage.py telegram_bot.py ./
+COPY web_app.py ./
+COPY web/ ./web/
 
 CMD ["python", "main.py", "--telegram"]

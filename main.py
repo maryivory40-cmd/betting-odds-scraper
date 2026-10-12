@@ -2,6 +2,7 @@ import argparse
 
 from scraper import OddsPortalScraper
 from telegram_bot import TelegramBot
+from web_app import create_server
 
 
 def main():
@@ -11,7 +12,34 @@ def main():
         action="store_true",
         help="Run the Telegram bot instead of the command-line interface",
     )
+    parser.add_argument(
+        "--web",
+        action="store_true",
+        help="Run the mobile-friendly odds dashboard",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Web dashboard bind address (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Web dashboard port (default: 8000)",
+    )
     args = parser.parse_args()
+
+    if args.web:
+        server = create_server(args.host, args.port, OddsPortalScraper())
+        print(f"Odds dashboard running at http://{args.host}:{args.port}")
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            print("\nOdds dashboard stopped.")
+        finally:
+            server.server_close()
+        return
 
     if args.telegram:
         TelegramBot.from_environment().run()

@@ -6,6 +6,7 @@ A Python-based betting odds scraper and arbitrage scanner.
 - Fetch Premier League fixture odds from OddsPortal
 - Parse odds and detect arbitrage opportunities
 - Read visible text from betting screenshots sent to the Telegram bot
+- View match odds and estimated market-implied probabilities in a mobile-friendly web dashboard
 - Save results to CSV
 - Command-line interface
 
@@ -46,6 +47,33 @@ JPEG/PNG image document to have the bot extract its visible text. The bot uses
 Tesseract OCR; the included Dockerfile installs it for deployment. OCR can
 misread team names or odds, so verify all extracted text. Screenshot reading
 does not connect to bookmaker accounts, create bet slips, or place bets.
+
+## Web dashboard
+
+Start the dashboard locally with:
+
+```bash
+python main.py --web
+```
+
+Then open `http://127.0.0.1:8000`. To allow access from other devices on the same
+network, bind to your computer's network interface with `--host 0.0.0.0`; for
+example, run `python main.py --web --host 0.0.0.0 --port 8000` and visit the
+computer's LAN address from your phone. Do not expose the server directly to
+the public internet without adding suitable production hosting and security.
+
+The dashboard currently shows the scraper's EPL odds and the normalized
+market-implied probabilities derived from those same odds. These are not
+independent match predictions and are not validated against historical data;
+they cannot guarantee an outcome. OddsPortal availability and parsed fixtures
+may vary.
+
+The included Docker image can also run the website:
+
+```bash
+docker run --rm -p 8000:8000 betting-odds-scraper:ocr \
+  python main.py --web --host 0.0.0.0
+```
 
 ## Example commands
 - `fetch` - Fetch matches from OddsPortal
