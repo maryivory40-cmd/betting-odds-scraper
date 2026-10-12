@@ -1,4 +1,4 @@
-# betting-odds-scraper
+# betting Bot
 
 A Python-based betting odds scraper and arbitrage scanner.
 

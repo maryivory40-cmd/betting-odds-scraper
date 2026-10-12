@@ -17,13 +17,13 @@ def main():
     }
 
     print("\n" + "="*50)
-    print("🎯 Betting Odds Scraper & Arbitrage Scanner")
+    print("🎯 betting Bot")
     print("="*50)
     print("Type 'help' for available commands\n")
 
     while True:
         try:
-            cmd = input("betting-scraper> ").strip().lower()
+            cmd = input("betting-bot> ").strip().lower()
 
             if cmd == "scan":
                 opportunities = scraper.scan_arbitrage()
