@@ -1,11 +1,12 @@
 import json
+import re
 import threading
 import unittest
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from scraper import LEAGUES
-from web_app import create_server, market_probabilities
+from web_app import WEB_DIR, create_server, market_probabilities
 
 
 class OddsDashboardTests(unittest.TestCase):
@@ -96,6 +97,12 @@ class OddsDashboardTests(unittest.TestCase):
                 "conference-league",
             },
         )
+
+    def test_website_selector_matches_supported_league_catalog(self):
+        html = (WEB_DIR / "index.html").read_text(encoding="utf-8")
+        options = re.findall(r'<option value="([^"]+)"', html)
+
+        self.assertEqual(set(options), set(LEAGUES))
 
     def test_unknown_routes_are_not_served(self):
         class FakeScraper:
