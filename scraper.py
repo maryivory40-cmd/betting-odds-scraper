@@ -3,33 +3,81 @@ from bs4 import BeautifulSoup
 import time
 
 
+LEAGUES = {
+    "premier-league": {
+        "name": "Premier League",
+        "url": "https://www.oddsportal.com/soccer/england/premier-league/",
+    },
+    "laliga": {
+        "name": "LaLiga",
+        "url": "https://www.oddsportal.com/soccer/spain/laliga/",
+    },
+    "serie-a": {
+        "name": "Serie A",
+        "url": "https://www.oddsportal.com/soccer/italy/serie-a/",
+    },
+    "bundesliga": {
+        "name": "Bundesliga",
+        "url": "https://www.oddsportal.com/soccer/germany/bundesliga/",
+    },
+    "ligue-1": {
+        "name": "Ligue 1",
+        "url": "https://www.oddsportal.com/soccer/france/ligue-1/",
+    },
+    "champions-league": {
+        "name": "UEFA Champions League",
+        "url": "https://www.oddsportal.com/soccer/europe/champions-league/",
+    },
+    "europa-league": {
+        "name": "UEFA Europa League",
+        "url": "https://www.oddsportal.com/soccer/europe/europa-league/",
+    },
+    "conference-league": {
+        "name": "UEFA Conference League",
+        "url": "https://www.oddsportal.com/soccer/europe/conference-league/",
+    },
+}
+
+
 class OddsPortalScraper:
     def __init__(self, url="https://www.oddsportal.com/soccer/england/premier-league/"):
         self.url = url
         self.headers = {"User-Agent": "Mozilla/5.0"}
         self.matches = []
 
-    def fetch_matches(self):
+    def fetch_matches(self, url=None):
         """Fetch matches from OddsPortal"""
         try:
-            response = requests.get(self.url, headers=self.headers, timeout=15)
+            response = requests.get(url or self.url, headers=self.headers, timeout=15)
             response.raise_for_status()
         except requests.RequestException as exc:
             raise RuntimeError(f"Failed to fetch page: {exc}") from exc
 
-        soup = BeautifulSoup(response.text, "html.parser")
-        rows = soup.find_all("tr", class_="odd deactivate")
+        self.matches = self._parse_matches(response.text)
 
-        self.matches = []
+        if self.matches:
+            print(f"✅ Fetched {len(self.matches)} matches")
+        else:
+            print(
+                "⚠️ No parseable matches found. The page may have no listed "
+                "fixtures or its layout may have changed."
+            )
+
+        return self.matches
+
+    @staticmethod
+    def _parse_matches(html):
+        soup = BeautifulSoup(html, "html.parser")
+        rows = soup.select("tr.odd, tr.even")
+        matches = []
         for row in rows:
             try:
-                teams_elem = row.find("td", class_="name")
+                teams_elem = row.select_one("td.name, td.table-participant")
                 if not teams_elem:
                     continue
 
                 teams = teams_elem.text.strip()
-                odds_cells = row.find_all("td", class_="odds-nowrp")
-                
+                odds_cells = row.select("td.odds-nowrp")
                 if len(odds_cells) < 3:
                     continue
 
@@ -37,7 +85,7 @@ class OddsPortalScraper:
                 draw = float(odds_cells[1].text.strip())
                 away = float(odds_cells[2].text.strip())
 
-                self.matches.append({
+                matches.append({
                     "teams": teams,
                     "home": home,
                     "draw": draw,
@@ -46,13 +94,15 @@ class OddsPortalScraper:
             except (TypeError, ValueError, AttributeError):
                 continue
 
-        print(f"✅ Fetched {len(self.matches)} matches")
-        return self.matches
+        return matches
 
-    def scan_arbitrage(self):
+    def scan_arbitrage(self, url=None):
         """Scan matches for arbitrage opportunities"""
+        if url or not self.matches:
+            self.fetch_matches(url=url)
         if not self.matches:
-            self.fetch_matches()
+            print("No match odds available to scan.")
+            return []
 
         opportunities = []
         for match in self.matches:
