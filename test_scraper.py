@@ -1,6 +1,7 @@
 import unittest
+from unittest.mock import Mock, patch
 
-from scraper import OddsPortalScraper
+from scraper import LEAGUES, OddsPortalScraper
 
 
 class OddsPortalParserTests(unittest.TestCase):
@@ -51,6 +52,19 @@ class OddsPortalParserTests(unittest.TestCase):
 
     def test_empty_page_returns_no_matches(self):
         self.assertEqual(OddsPortalScraper._parse_matches("<html></html>"), [])
+
+    @patch("scraper.requests.get")
+    def test_fetch_matches_uses_selected_competition_url(self, mock_get):
+        response = Mock(text="<html></html>")
+        mock_get.return_value = response
+        scraper = OddsPortalScraper()
+
+        scraper.fetch_matches(url=LEAGUES["laliga"]["url"])
+
+        mock_get.assert_called_once_with(
+            LEAGUES["laliga"]["url"], headers=scraper.headers, timeout=15
+        )
+        response.raise_for_status.assert_called_once()
 
 
 if __name__ == "__main__":

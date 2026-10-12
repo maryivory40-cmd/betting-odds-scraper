@@ -5,7 +5,7 @@ import time
 
 import requests
 
-from scraper import OddsPortalScraper
+from scraper import LEAGUES, OddsPortalScraper
 
 
 class TelegramBot:
@@ -64,7 +64,9 @@ class TelegramBot:
             self._handle_screenshot(message, chat_id)
             return
 
-        command = text.split()[0][1:].split("@", 1)[0].lower()
+        parts = text.split()
+        command = parts[0][1:].split("@", 1)[0].lower()
+        league_key = parts[1].lower() if len(parts) > 1 else "premier-league"
         if command in {"start", "id"}:
             if user_id in self.allowed_user_ids:
                 self._send_message(chat_id, "Bot is ready. Send /help for commands.")
@@ -86,15 +88,23 @@ class TelegramBot:
                 self._send_message(
                     chat_id,
                     "/fetch - Fetch current matches and odds\n"
-                    "/scan - Find arbitrage opportunities\n"
+                    "/fetch <league> - Fetch another supported competition\n"
+                    "/scan [league] - Find arbitrage opportunities\n"
                     "/save - Save the last scan results to CSV\n"
+                    "Leagues: " + ", ".join(LEAGUES) + "\n"
                     "Send a betting screenshot - Read visible text and odds\n"
                     "/help - Show available commands",
                 )
             elif command == "fetch":
-                matches = self.scraper.fetch_matches()
+                league = LEAGUES.get(league_key)
+                if not league:
+                    self._send_message(chat_id, "Unknown league. Send /help for choices.")
+                    return
+                matches = self.scraper.fetch_matches(url=league["url"])
                 if matches:
-                    self._send_message(chat_id, f"Fetched {len(matches)} matches.")
+                    self._send_message(
+                        chat_id, f"Fetched {len(matches)} {league['name']} matches."
+                    )
                 else:
                     self._send_message(
                         chat_id,
@@ -102,7 +112,11 @@ class TelegramBot:
                         "fixtures or its page layout may have changed.",
                     )
             elif command == "scan":
-                self.opportunities = self.scraper.scan_arbitrage()
+                league = LEAGUES.get(league_key)
+                if not league:
+                    self._send_message(chat_id, "Unknown league. Send /help for choices.")
+                    return
+                self.opportunities = self.scraper.scan_arbitrage(url=league["url"])
                 if not self.scraper.matches:
                     self._send_message(
                         chat_id, "No match odds are available to scan right now."

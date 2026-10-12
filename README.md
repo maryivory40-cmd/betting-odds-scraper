@@ -3,7 +3,8 @@
 A Python-based betting odds scraper and arbitrage scanner.
 
 ## Features
-- Fetch Premier League fixture odds from OddsPortal
+- Fetch fixture odds from the Premier League, LaLiga, Serie A, Bundesliga,
+  Ligue 1, and UEFA Champions/Europa/Conference League pages on OddsPortal
 - Parse odds and detect arbitrage opportunities
 - Read visible text from betting screenshots sent to the Telegram bot
 - View match odds and estimated market-implied probabilities in a mobile-friendly web dashboard
@@ -41,8 +42,11 @@ python main.py --telegram
 For multiple authorized users, provide comma-separated IDs in
 `TELEGRAM_ALLOWED_USER_IDS`. Keep the bot token private. The bot uses long
 polling, so it can run on a computer or server without a public webhook URL.
-Send `/fetch`, `/scan`, and `/save` in Telegram to perform the corresponding
-scraper actions; `/help` lists the commands. Send a screenshot as a photo or a
+Send `/fetch [league]` and `/scan [league]` in Telegram to choose a competition;
+supported keys are `premier-league`, `laliga`, `serie-a`, `bundesliga`,
+`ligue-1`, `champions-league`, `europa-league`, and `conference-league`.
+Without a league key, the bot uses the Premier League. `/save` saves the last
+scan results. `/help` lists the commands. Send a screenshot as a photo or a
 JPEG/PNG image document to have the bot extract its visible text. The bot uses
 Tesseract OCR; the included Dockerfile installs it for deployment. OCR can
 misread team names or odds, so verify all extracted text. Screenshot reading
@@ -62,11 +66,16 @@ example, run `python main.py --web --host 0.0.0.0 --port 8000` and visit the
 computer's LAN address from your phone. Do not expose the server directly to
 the public internet without adding suitable production hosting and security.
 
-The dashboard currently shows the scraper's EPL odds and the normalized
+The dashboard lets you choose the Premier League, LaLiga, Serie A, Bundesliga,
+Ligue 1, UEFA Champions League, UEFA Europa League, or UEFA Conference League.
+It displays the selected OddsPortal competition's odds and normalized
 market-implied probabilities derived from those same odds. These are not
 independent match predictions and are not validated against historical data;
 they cannot guarantee an outcome. OddsPortal availability and parsed fixtures
 may vary.
+
+The command-line tool also accepts a supported competition key, for example
+`fetch laliga` or `scan champions-league`.
 
 The included Docker image can also run the website:
 

@@ -6,6 +6,47 @@ import requests
 from telegram_bot import TelegramBot
 
 
+class TelegramLeagueTests(unittest.TestCase):
+    def test_fetch_command_selects_competition(self):
+        scraper = Mock()
+        scraper.fetch_matches.return_value = [{"teams": "A - B"}]
+        bot = TelegramBot("test-token", {123}, scraper=scraper)
+
+        with patch.object(bot, "_send_message") as send_message:
+            bot._handle_update(
+                {
+                    "message": {
+                        "from": {"id": 123},
+                        "chat": {"id": 456},
+                        "text": "/fetch laliga",
+                    }
+                }
+            )
+
+        scraper.fetch_matches.assert_called_once_with(
+            url="https://www.oddsportal.com/soccer/spain/laliga/"
+        )
+        send_message.assert_called_once_with(456, "Fetched 1 LaLiga matches.")
+
+    def test_unknown_competition_is_rejected_without_fetching(self):
+        scraper = Mock()
+        bot = TelegramBot("test-token", {123}, scraper=scraper)
+
+        with patch.object(bot, "_send_message") as send_message:
+            bot._handle_update(
+                {
+                    "message": {
+                        "from": {"id": 123},
+                        "chat": {"id": 456},
+                        "text": "/fetch unknown",
+                    }
+                }
+            )
+
+        scraper.fetch_matches.assert_not_called()
+        self.assertIn("Unknown league", send_message.call_args.args[1])
+
+
 class TelegramScreenshotTests(unittest.TestCase):
     def setUp(self):
         self.bot = TelegramBot("test-token", {123})

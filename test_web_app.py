@@ -4,6 +4,7 @@ import unittest
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
+from scraper import LEAGUES
 from web_app import create_server, market_probabilities
 
 
@@ -29,8 +30,11 @@ class OddsDashboardTests(unittest.TestCase):
                 self.assertIsNone(market_probabilities(match))
 
     def test_api_returns_match_odds_and_disclaimer(self):
+        requested_urls = []
+
         class FakeScraper:
-            def fetch_matches(self):
+            def fetch_matches(self, url=None):
+                requested_urls.append(url)
                 return [
                     {
                         "teams": "Team A - Team B",
@@ -44,8 +48,13 @@ class OddsDashboardTests(unittest.TestCase):
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         try:
-            with urlopen(f"http://127.0.0.1:{server.server_port}/api/matches") as resp:
+            with urlopen(
+                f"http://127.0.0.1:{server.server_port}/api/matches?league=serie-a"
+            ) as resp:
                 payload = json.load(resp)
+            self.assertEqual(payload["league"], "serie-a")
+            self.assertEqual(payload["league_name"], "Serie A")
+            self.assertEqual(requested_urls, [LEAGUES["serie-a"]["url"]])
             self.assertEqual(payload["matches"][0]["teams"], "Team A - Team B")
             self.assertIn("not independently validated", payload["disclaimer"])
             self.assertEqual(resp.headers["X-Content-Type-Options"], "nosniff")
@@ -53,6 +62,40 @@ class OddsDashboardTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join()
+
+    def test_api_rejects_unknown_league(self):
+        class FakeScraper:
+            def fetch_matches(self, url=None):
+                raise AssertionError("Unknown league must not be fetched")
+
+        server = create_server("127.0.0.1", 0, FakeScraper())
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        try:
+            with self.assertRaises(HTTPError) as error:
+                urlopen(
+                    f"http://127.0.0.1:{server.server_port}/api/matches?league=invalid"
+                )
+            self.assertEqual(error.exception.code, 400)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
+    def test_league_catalog_covers_requested_and_major_european_competitions(self):
+        self.assertEqual(
+            set(LEAGUES),
+            {
+                "premier-league",
+                "laliga",
+                "serie-a",
+                "bundesliga",
+                "ligue-1",
+                "champions-league",
+                "europa-league",
+                "conference-league",
+            },
+        )
 
     def test_unknown_routes_are_not_served(self):
         class FakeScraper:

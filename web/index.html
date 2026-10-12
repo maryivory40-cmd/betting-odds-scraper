@@ -14,7 +14,7 @@
         <span class="brand-mark" aria-hidden="true">O</span>
         <span>oddsboard<span class="brand-dot">.</span></span>
       </a>
-      <span class="source-label"><span class="status-dot"></span> ODDSPORTAL · EPL</span>
+      <span class="source-label"><span class="status-dot"></span> ODDSPORTAL</span>
     </header>
 
     <main>
@@ -41,11 +41,24 @@
       <section class="matches-section" aria-labelledby="matches-heading">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">ENGLISH PREMIER LEAGUE</p>
+            <p id="league-label" class="eyebrow">ENGLISH PREMIER LEAGUE</p>
             <h2 id="matches-heading">Matches &amp; markets</h2>
           </div>
           <span id="match-count" class="match-count">—</span>
         </div>
+        <label class="league-picker">
+          <span>Competition</span>
+          <select id="league-select" aria-label="Choose a league or competition">
+            <option value="premier-league">Premier League</option>
+            <option value="laliga">LaLiga</option>
+            <option value="serie-a">Serie A</option>
+            <option value="bundesliga">Bundesliga</option>
+            <option value="ligue-1">Ligue 1</option>
+            <option value="champions-league">UEFA Champions League</option>
+            <option value="europa-league">UEFA Europa League</option>
+            <option value="conference-league">UEFA Conference League</option>
+          </select>
+        </label>
         <div id="message" class="message" role="status" aria-live="polite">
           Loading the latest available odds…
         </div>

@@ -3,7 +3,9 @@ import math
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
+from scraper import LEAGUES
 
 WEB_DIR = Path(__file__).parent / "web"
 
@@ -32,16 +34,27 @@ class OddsDashboardHandler(BaseHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
-        if self.path == "/api/matches":
-            self._serve_matches()
+        parsed_path = urlsplit(self.path)
+        if parsed_path.path == "/api/matches":
+            query = parse_qs(parsed_path.query)
+            league = query.get("league", ["premier-league"])[0]
+            if league not in LEAGUES:
+                self._send_json(400, {"error": "Choose a supported league."})
+                return
+            self._serve_matches(league)
             return
 
-        assets = {
-            "/": ("index.html", "text/html; charset=utf-8"),
-            "/styles.css": ("styles.css", "text/css; charset=utf-8"),
-            "/app.js": ("app.js", "text/javascript; charset=utf-8"),
-        }
-        asset = assets.get(self.path)
+        if parsed_path.query:
+            self._send_bytes(404, b"Not found", "text/plain; charset=utf-8")
+            return
+
+        if parsed_path.path == "/":
+            asset = ("index.html", "text/html; charset=utf-8")
+        else:
+            asset = {
+                "/styles.css": ("styles.css", "text/css; charset=utf-8"),
+                "/app.js": ("app.js", "text/javascript; charset=utf-8"),
+            }.get(parsed_path.path)
         if asset is None:
             self._send_bytes(404, b"Not found", "text/plain; charset=utf-8")
             return
@@ -56,9 +69,10 @@ class OddsDashboardHandler(BaseHTTPRequestHandler):
             return
         self._send_bytes(200, content, content_type)
 
-    def _serve_matches(self):
+    def _serve_matches(self, league):
+        selected_league = LEAGUES[league]
         try:
-            matches = self.scraper.fetch_matches()
+            matches = self.scraper.fetch_matches(url=selected_league["url"])
         except Exception:
             self._send_json(
                 502,
@@ -84,6 +98,8 @@ class OddsDashboardHandler(BaseHTTPRequestHandler):
         self._send_json(
             200,
             {
+                "league": league,
+                "league_name": selected_league["name"],
                 "matches": result,
                 "disclaimer": (
                     "Estimates are normalized market-implied probabilities from "

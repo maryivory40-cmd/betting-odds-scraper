@@ -3,6 +3,8 @@ const messageElement = document.querySelector("#message");
 const countElement = document.querySelector("#match-count");
 const updatedElement = document.querySelector("#updated");
 const refreshButton = document.querySelector("#refresh");
+const leagueSelect = document.querySelector("#league-select");
+const leagueLabel = document.querySelector("#league-label");
 
 function addMarket(card, label, odds, probability) {
   const market = document.createElement("div");
@@ -31,9 +33,10 @@ function addMarket(card, label, odds, probability) {
   card.append(market);
 }
 
-function renderMatches(matches) {
+function renderMatches(matches, leagueName) {
   matchesElement.replaceChildren();
   countElement.textContent = `${matches.length} ${matches.length === 1 ? "match" : "matches"}`;
+  leagueLabel.textContent = leagueName.toUpperCase();
 
   if (!matches.length) {
     messageElement.textContent =
@@ -71,12 +74,15 @@ async function loadMatches() {
   updatedElement.textContent = "";
 
   try {
-    const response = await fetch("/api/matches", { headers: { Accept: "application/json" } });
+    const response = await fetch(
+      `/api/matches?league=${encodeURIComponent(leagueSelect.value)}`,
+      { headers: { Accept: "application/json" } },
+    );
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || "Odds are temporarily unavailable.");
     }
-    renderMatches(data.matches);
+    renderMatches(data.matches, data.league_name);
   } catch (error) {
     matchesElement.replaceChildren();
     countElement.textContent = "—";
@@ -90,4 +96,5 @@ async function loadMatches() {
 }
 
 refreshButton.addEventListener("click", loadMatches);
+leagueSelect.addEventListener("change", loadMatches);
 loadMatches();

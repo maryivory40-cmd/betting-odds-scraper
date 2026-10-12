@@ -3,16 +3,52 @@ from bs4 import BeautifulSoup
 import time
 
 
+LEAGUES = {
+    "premier-league": {
+        "name": "Premier League",
+        "url": "https://www.oddsportal.com/soccer/england/premier-league/",
+    },
+    "laliga": {
+        "name": "LaLiga",
+        "url": "https://www.oddsportal.com/soccer/spain/laliga/",
+    },
+    "serie-a": {
+        "name": "Serie A",
+        "url": "https://www.oddsportal.com/soccer/italy/serie-a/",
+    },
+    "bundesliga": {
+        "name": "Bundesliga",
+        "url": "https://www.oddsportal.com/soccer/germany/bundesliga/",
+    },
+    "ligue-1": {
+        "name": "Ligue 1",
+        "url": "https://www.oddsportal.com/soccer/france/ligue-1/",
+    },
+    "champions-league": {
+        "name": "UEFA Champions League",
+        "url": "https://www.oddsportal.com/soccer/europe/champions-league/",
+    },
+    "europa-league": {
+        "name": "UEFA Europa League",
+        "url": "https://www.oddsportal.com/soccer/europe/europa-league/",
+    },
+    "conference-league": {
+        "name": "UEFA Conference League",
+        "url": "https://www.oddsportal.com/soccer/europe/conference-league/",
+    },
+}
+
+
 class OddsPortalScraper:
     def __init__(self, url="https://www.oddsportal.com/soccer/england/premier-league/"):
         self.url = url
         self.headers = {"User-Agent": "Mozilla/5.0"}
         self.matches = []
 
-    def fetch_matches(self):
+    def fetch_matches(self, url=None):
         """Fetch matches from OddsPortal"""
         try:
-            response = requests.get(self.url, headers=self.headers, timeout=15)
+            response = requests.get(url or self.url, headers=self.headers, timeout=15)
             response.raise_for_status()
         except requests.RequestException as exc:
             raise RuntimeError(f"Failed to fetch page: {exc}") from exc
@@ -60,10 +96,10 @@ class OddsPortalScraper:
 
         return matches
 
-    def scan_arbitrage(self):
+    def scan_arbitrage(self, url=None):
         """Scan matches for arbitrage opportunities"""
-        if not self.matches:
-            self.fetch_matches()
+        if url or not self.matches:
+            self.fetch_matches(url=url)
         if not self.matches:
             print("No match odds available to scan.")
             return []
