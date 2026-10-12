@@ -5,6 +5,7 @@ A Python-based betting odds scraper and arbitrage scanner.
 ## Features
 - Fetch Premier League fixture odds from OddsPortal
 - Parse odds and detect arbitrage opportunities
+- Read visible text from betting screenshots sent to the Telegram bot
 - Save results to CSV
 - Command-line interface
 
@@ -40,7 +41,11 @@ For multiple authorized users, provide comma-separated IDs in
 `TELEGRAM_ALLOWED_USER_IDS`. Keep the bot token private. The bot uses long
 polling, so it can run on a computer or server without a public webhook URL.
 Send `/fetch`, `/scan`, and `/save` in Telegram to perform the corresponding
-scraper actions; `/help` lists the commands.
+scraper actions; `/help` lists the commands. Send a screenshot as a photo or a
+JPEG/PNG image document to have the bot extract its visible text. The bot uses
+Tesseract OCR; the included Dockerfile installs it for deployment. OCR can
+misread team names or odds, so verify all extracted text. Screenshot reading
+does not connect to bookmaker accounts, create bet slips, or place bets.
 
 ## Example commands
 - `fetch` - Fetch matches from OddsPortal

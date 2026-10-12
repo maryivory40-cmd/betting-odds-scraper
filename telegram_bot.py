@@ -1,4 +1,6 @@
 import os
+import subprocess
+import tempfile
 import time
 
 import requests
@@ -9,6 +11,7 @@ from scraper import OddsPortalScraper
 class TelegramBot:
     def __init__(self, token, allowed_user_ids, scraper=None):
         self.api_url = f"https://api.telegram.org/bot{token}"
+        self.file_api_url = f"https://api.telegram.org/file/bot{token}"
         self.allowed_user_ids = allowed_user_ids
         self.scraper = scraper or OddsPortalScraper()
         self.opportunities = []
@@ -45,11 +48,20 @@ class TelegramBot:
 
     def _handle_update(self, update):
         message = update.get("message", {})
-        text = message.get("text", "").strip()
+        text = (message.get("text") or "").strip()
         sender = message.get("from", {})
         chat_id = message.get("chat", {}).get("id")
         user_id = sender.get("id")
-        if not text.startswith("/") or chat_id is None or user_id is None:
+        if chat_id is None or user_id is None:
+            return
+
+        if not text.startswith("/"):
+            if not message.get("photo") and not self._is_supported_image_document(message):
+                return
+            if user_id not in self.allowed_user_ids:
+                self._send_message(chat_id, "You are not authorized to use this bot.")
+                return
+            self._handle_screenshot(message, chat_id)
             return
 
         command = text.split()[0][1:].split("@", 1)[0].lower()
@@ -76,6 +88,7 @@ class TelegramBot:
                     "/fetch - Fetch current matches and odds\n"
                     "/scan - Find arbitrage opportunities\n"
                     "/save - Save the last scan results to CSV\n"
+                    "Send a betting screenshot - Read visible text and odds\n"
                     "/help - Show available commands",
                 )
             elif command == "fetch":
@@ -108,6 +121,76 @@ class TelegramBot:
             self._send_message(
                 chat_id, "That command failed. Check the bot logs and try again."
             )
+
+    @staticmethod
+    def _is_supported_image_document(message):
+        document = message.get("document") or {}
+        return document.get("mime_type") in {"image/jpeg", "image/png"}
+
+    def _handle_screenshot(self, message, chat_id):
+        photo_sizes = message.get("photo") or []
+        if photo_sizes:
+            image = max(photo_sizes, key=lambda item: item.get("file_size", 0))
+        else:
+            image = message["document"]
+
+        try:
+            recognized_text = self._read_image_text(image["file_id"])
+        except (
+            OSError,
+            RuntimeError,
+            requests.RequestException,
+            subprocess.SubprocessError,
+        ):
+            self._send_message(
+                chat_id,
+                "I couldn't read that image. Try a clear screenshot with visible "
+                "text and odds.",
+            )
+            return
+
+        if not recognized_text:
+            self._send_message(
+                chat_id,
+                "I couldn't detect readable text. Try a clearer screenshot with "
+                "visible text and odds.",
+            )
+            return
+
+        self._send_message(
+            chat_id,
+            "Text detected (please verify every team and number; OCR can be wrong):\n"
+            + recognized_text,
+        )
+
+    def _read_image_text(self, file_id):
+        file_info = self._api_request("getFile", {"file_id": file_id})
+        file_path = file_info.get("file_path")
+        if not file_path:
+            raise RuntimeError("Telegram did not return an image path.")
+
+        response = requests.get(
+            f"{self.file_api_url}/{file_path}", timeout=(5, 30)
+        )
+        response.raise_for_status()
+        if len(response.content) > 20 * 1024 * 1024:
+            raise RuntimeError("Image exceeds Telegram's file size limit.")
+
+        suffix = os.path.splitext(file_path)[1].lower()
+        if suffix not in {".jpg", ".jpeg", ".png"}:
+            suffix = ".img"
+
+        with tempfile.NamedTemporaryFile(suffix=suffix) as image_file:
+            image_file.write(response.content)
+            image_file.flush()
+            result = subprocess.run(
+                ["tesseract", image_file.name, "stdout"],
+                capture_output=True,
+                text=True,
+                timeout=20,
+                check=True,
+            )
+        return result.stdout.strip()[:3200]
 
     def _send_scan_results(self, chat_id):
         if not self.opportunities:
